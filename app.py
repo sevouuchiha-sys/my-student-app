@@ -1,75 +1,67 @@
 import os
-import sqlite3
+import psycopg2
 from flask import Flask, jsonify, request, render_template_string
 
 app = Flask(__name__)
-DB_NAME = 'database.db'
 
-# --- DATABASE SETUP ---
+# --- DATABASE CONNECTION (PostgreSQL) ---
 def get_db_connection():
-    conn = sqlite3.connect(DB_NAME)
-    conn.row_factory = sqlite3.Row
+    # Kukunin nito ang "Internal Database URL" mula sa Render settings mamaya
+    conn = psycopg2.connect(os.environ.get('DATABASE_URL'))
     return conn
 
 def init_db():
-    with get_db_connection() as conn:
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS students (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                grade INTEGER,
-                section TEXT
-            )
-        ''')
-        conn.commit()
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS students (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            grade INTEGER,
+            section TEXT
+        )
+    ''')
+    conn.commit()
+    cur.close()
+    conn.close()
 
-init_db()
+# Subukan i-initialize ang DB pagtakbo ng app
+try:
+    init_db()
+except:
+    print("Database not ready yet...")
 
-# --- HTML & CSS UI (Embedded) ---
+# --- HTML UI (Same as before) ---
 HTML_UI = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student CRUD - Chromebook Edition</title>
+    <title>Permanent Student CRUD</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #f4f7f6; padding-top: 50px; }
-        .main-card { border: none; border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .btn-primary { background: #4e73df; border: none; }
+        body { background: #eef2f3; padding-top: 50px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .btn-primary { background: #007bff; border: none; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-10">
-            <div class="card main-card p-4">
-                <h3 class="text-center mb-4 text-primary">Student Management System</h3>
-                
-                <div class="row g-3 mb-4">
+        <div class="col-md-9">
+            <div class="card p-4">
+                <h3 class="text-center mb-4">Student Database (PostgreSQL)</h3>
+                <div class="row g-2 mb-4">
                     <input type="hidden" id="student-id">
-                    <div class="col-md-4">
-                        <input type="text" id="name" class="form-control" placeholder="Student Name">
-                    </div>
-                    <div class="col-md-3">
-                        <input type="number" id="grade" class="form-control" placeholder="Grade">
-                    </div>
-                    <div class="col-md-3">
-                        <input type="text" id="section" class="form-control" placeholder="Section">
-                    </div>
-                    <div class="col-md-2">
-                        <button class="btn btn-primary w-100" onclick="saveStudent()" id="btn-text">Add</button>
-                    </div>
+                    <div class="col-md-5"><input type="text" id="name" class="form-control" placeholder="Student Name"></div>
+                    <div class="col-md-2"><input type="number" id="grade" class="form-control" placeholder="Grade"></div>
+                    <div class="col-md-3"><input type="text" id="section" class="form-control" placeholder="Section"></div>
+                    <div class="col-md-2"><button class="btn btn-primary w-100" onclick="saveStudent()" id="btn-text">Add</button></div>
                 </div>
-
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Name</th><th>Grade</th><th>Section</th><th class="text-center">Actions</th>
-                            </tr>
-                        </thead>
+                    <table class="table table-hover">
+                        <thead class="table-light"><tr><th>Name</th><th>Grade</th><th>Section</th><th>Actions</th></tr></thead>
                         <tbody id="student-list"></tbody>
                     </table>
                 </div>
@@ -77,110 +69,81 @@ HTML_UI = """
         </div>
     </div>
 </div>
-
 <script>
     const API = '/students';
     async function load() {
         const res = await fetch(API);
         const data = await res.json();
-        const list = document.getElementById('student-list');
-        list.innerHTML = data.students.map(s => `
+        document.getElementById('student-list').innerHTML = data.students.map(s => `
             <tr>
-                <td><b>${s.name}</b></td>
-                <td>${s.grade}</td>
-                <td>${s.section}</td>
-                <td class="text-center">
-                    <button class="btn btn-sm btn-outline-info me-2" onclick='editStudent(${JSON.stringify(s)})'>Edit</button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteStudent(${s.id})">Delete</button>
+                <td><b>${s.name}</b></td><td>${s.grade}</td><td>${s.section}</td>
+                <td>
+                    <button class="btn btn-sm btn-info text-white me-1" onclick='editStudent(${JSON.stringify(s)})'>Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteStudent(${s.id})">Delete</button>
                 </td>
             </tr>`).join('');
     }
-
     async function saveStudent() {
         const id = document.getElementById('student-id').value;
-        const data = {
-            name: document.getElementById('name').value,
-            grade: document.getElementById('grade').value,
-            section: document.getElementById('section').value
-        };
-        if(!data.name) return alert("Paki-lagay ang pangalan.");
-        
-        await fetch(id ? `${API}/${id}` : API, {
-            method: id ? 'PUT' : 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(data)
-        });
+        const data = { name: document.getElementById('name').value, grade: document.getElementById('grade').value, section: document.getElementById('section').value };
+        await fetch(id ? `${API}/${id}` : API, { method: id ? 'PUT' : 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) });
         reset(); load();
     }
-
-    async function deleteStudent(id) {
-        if(confirm("Sigurado ka bang buburahin ito?")) {
-            await fetch(`${API}/${id}`, { method: 'DELETE' });
-            load();
-        }
-    }
-
-    function editStudent(s) {
-        document.getElementById('student-id').value = s.id;
-        document.getElementById('name').value = s.name;
-        document.getElementById('grade').value = s.grade;
-        document.getElementById('section').value = s.section;
-        document.getElementById('btn-text').innerText = "Update";
-    }
-
-    function reset() {
-        document.getElementById('student-id').value = '';
-        document.getElementById('name').value = '';
-        document.getElementById('grade').value = '';
-        document.getElementById('section').value = '';
-        document.getElementById('btn-text').innerText = "Add";
-    }
+    async function deleteStudent(id) { if(confirm("Delete this?")) { await fetch(`${API}/${id}`, { method: 'DELETE' }); load(); } }
+    function editStudent(s) { document.getElementById('student-id').value = s.id; document.getElementById('name').value = s.name; document.getElementById('grade').value = s.grade; document.getElementById('section').value = s.section; document.getElementById('btn-text').innerText = "Update"; }
+    function reset() { document.getElementById('student-id').value = ''; document.getElementById('name').value = ''; document.getElementById('grade').value = ''; document.getElementById('section').value = ''; document.getElementById('btn-text').innerText = "Add"; }
     load();
 </script>
 </body>
 </html>
 """
 
-# --- ROUTES ---
-
 @app.route('/')
-def home():
-    return render_template_string(HTML_UI)
+def home(): return render_template_string(HTML_UI)
 
 @app.route('/students', methods=['GET'])
 def get_students():
     conn = get_db_connection()
-    rows = conn.execute('SELECT * FROM students').fetchall()
+    cur = conn.cursor()
+    cur.execute('SELECT * FROM students ORDER BY id ASC')
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
-    return jsonify({"students": [dict(row) for row in rows]})
+    return jsonify({"students": [{"id": r[0], "name": r[1], "grade": r[2], "section": r[3]} for r in rows]})
 
 @app.route('/students', methods=['POST'])
 def add_student():
     data = request.get_json()
     conn = get_db_connection()
-    cur = conn.execute('INSERT INTO students (name, grade, section) VALUES (?, ?, ?)',
-                       (data.get('name'), data.get('grade'), data.get('section')))
+    cur = conn.cursor()
+    cur.execute('INSERT INTO students (name, grade, section) VALUES (%s, %s, %s)',
+                (data.get('name'), data.get('grade'), data.get('section')))
     conn.commit()
+    cur.close()
     conn.close()
-    return jsonify({"id": cur.lastrowid}), 201
+    return jsonify({"status": "success"}), 201
 
 @app.route('/students/<int:id>', methods=['PUT'])
 def update_student(id):
     data = request.get_json()
     conn = get_db_connection()
-    conn.execute('UPDATE students SET name = ?, grade = ?, section = ? WHERE id = ?',
-                 (data.get('name'), data.get('grade'), data.get('section'), id))
+    cur = conn.cursor()
+    cur.execute('UPDATE students SET name=%s, grade=%s, section=%s WHERE id=%s',
+                (data.get('name'), data.get('grade'), data.get('section'), id))
     conn.commit()
+    cur.close()
     conn.close()
-    return jsonify({"message": "Updated"})
+    return jsonify({"status": "updated"})
 
 @app.route('/students/<int:id>', methods=['DELETE'])
 def delete_student(id):
     conn = get_db_connection()
-    conn.execute('DELETE FROM students WHERE id = ?', (id,))
+    cur = conn.cursor()
+    cur.execute('DELETE FROM students WHERE id=%s', (id,))
     conn.commit()
+    cur.close()
     conn.close()
-    return jsonify({"message": "Deleted"})
+    return jsonify({"status": "deleted"})
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
