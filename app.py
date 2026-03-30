@@ -16,7 +16,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS students (
             id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
-            grade INTEGER,
+            grade NUMERIC,
             section TEXT
         )
     ''')
@@ -71,7 +71,6 @@ HTML_UI = """
             position: relative;
         }
 
-        /* Animated background */
         .bg-layer {
             position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden;
         }
@@ -100,7 +99,6 @@ HTML_UI = """
             75% { transform: translate(40px, 30px) scale(1.05); }
         }
 
-        /* Grid pattern overlay */
         .bg-grid {
             position: fixed; inset: 0; z-index: 0; pointer-events: none;
             background-image:
@@ -114,7 +112,6 @@ HTML_UI = """
             padding: 40px 16px 80px;
         }
 
-        /* Header */
         .page-header {
             text-align: center; margin-bottom: 36px;
             animation: fadeSlideDown 0.8s ease-out;
@@ -133,14 +130,13 @@ HTML_UI = """
             letter-spacing: -1px; line-height: 1.15; margin-bottom: 8px;
         }
         .page-header h1 span { color: var(--accent); }
-        .page-header p { color: var(--text-secondary); font-size: 15px; max-width: 460px; margin: 0 auto; }
+        .page-header p { color: var(--text-secondary); font-size: 15px; max-width: 480px; margin: 0 auto; }
 
         @keyframes fadeSlideDown {
             from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Stats row */
         .stats-row {
             display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
             margin-bottom: 28px; animation: fadeSlideUp 0.8s ease-out 0.1s both;
@@ -176,7 +172,6 @@ HTML_UI = """
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Main card */
         .main-card {
             background: var(--bg-card); border: 1px solid var(--border);
             border-radius: 18px; overflow: hidden;
@@ -184,12 +179,11 @@ HTML_UI = """
             box-shadow: 0 8px 40px rgba(0,0,0,0.3);
         }
 
-        /* Form section */
         .form-section {
             padding: 28px 28px 24px; border-bottom: 1px solid var(--border);
             background: linear-gradient(180deg, rgba(16,185,129,0.02) 0%, transparent 100%);
         }
-        .form-section .form-label-custom {
+        .form-label-custom {
             font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
             color: var(--text-muted); margin-bottom: 6px; font-weight: 500;
         }
@@ -212,7 +206,7 @@ HTML_UI = """
             font-weight: 600; font-size: 14px; cursor: pointer;
             transition: all 0.25s ease; font-family: 'Space Grotesk', sans-serif;
             display: inline-flex; align-items: center; gap: 8px; height: 100%;
-            min-width: 120px; justify-content: center;
+            min-width: 130px; justify-content: center;
         }
         .btn-add:hover {
             transform: translateY(-1px);
@@ -226,7 +220,6 @@ HTML_UI = """
             box-shadow: 0 6px 20px rgba(6,182,212,0.35);
         }
 
-        /* Table section */
         .table-section { padding: 0; }
         .table-toolbar {
             padding: 20px 28px 16px; display: flex; align-items: center;
@@ -261,18 +254,14 @@ HTML_UI = """
         .search-box input::placeholder { color: var(--text-muted); }
 
         .table-wrap { overflow-x: auto; }
-        .table-custom {
-            width: 100%; border-collapse: separate; border-spacing: 0;
-        }
+        .table-custom { width: 100%; border-collapse: separate; border-spacing: 0; }
         .table-custom thead th {
             background: rgba(16,185,129,0.04); color: var(--text-muted);
             font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
             font-weight: 600; padding: 12px 28px; border-bottom: 1px solid var(--border);
             white-space: nowrap;
         }
-        .table-custom tbody tr {
-            transition: all 0.2s ease;
-        }
+        .table-custom tbody tr { transition: all 0.2s ease; }
         .table-custom tbody tr:hover { background: var(--bg-card-hover); }
         .table-custom tbody td {
             padding: 14px 28px; border-bottom: 1px solid rgba(30,41,59,0.5);
@@ -289,12 +278,31 @@ HTML_UI = """
             align-items: center; justify-content: center; font-size: 13px;
             font-weight: 700; color: #fff; flex-shrink: 0;
         }
-        .grade-badge {
-            display: inline-flex; align-items: center; gap: 4px;
-            background: rgba(6,182,212,0.1); color: var(--info);
+
+        /* Grade/average badge with color coding */
+        .avg-badge {
+            display: inline-flex; align-items: center; gap: 5px;
             padding: 3px 10px; border-radius: 6px; font-size: 13px;
             font-family: 'JetBrains Mono', monospace; font-weight: 500;
         }
+        .avg-badge.pass { background: rgba(16,185,129,0.12); color: #34d399; }
+        .avg-badge.fail { background: rgba(239,68,68,0.12); color: #f87171; }
+        .avg-badge.none { background: rgba(71,85,105,0.2); color: var(--text-muted); }
+
+        .avg-bar-wrap {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .avg-bar-bg {
+            width: 60px; height: 5px; background: rgba(71,85,105,0.3);
+            border-radius: 3px; overflow: hidden; flex-shrink: 0;
+        }
+        .avg-bar-fill {
+            height: 100%; border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        .avg-bar-fill.pass { background: linear-gradient(90deg, #10b981, #34d399); }
+        .avg-bar-fill.fail { background: linear-gradient(90deg, #ef4444, #f87171); }
+
         .section-tag {
             background: rgba(245,158,11,0.1); color: var(--warning);
             padding: 3px 10px; border-radius: 6px; font-size: 13px; font-weight: 500;
@@ -315,14 +323,12 @@ HTML_UI = """
             color: var(--danger); transform: translateY(-1px);
         }
 
-        /* Empty state */
         .empty-state {
             text-align: center; padding: 60px 20px; color: var(--text-muted);
         }
         .empty-state i { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
         .empty-state p { font-size: 14px; margin: 0; }
 
-        /* Toast */
         .toast-container {
             position: fixed; top: 20px; right: 20px; z-index: 9999;
             display: flex; flex-direction: column; gap: 8px;
@@ -332,8 +338,7 @@ HTML_UI = """
             color: var(--text-primary); padding: 12px 20px; border-radius: 12px;
             font-size: 13px; display: flex; align-items: center; gap: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-            animation: toastIn 0.35s ease-out;
-            min-width: 250px;
+            animation: toastIn 0.35s ease-out; min-width: 250px;
         }
         .toast-msg.success { border-left: 3px solid var(--accent); }
         .toast-msg.success i { color: var(--accent); }
@@ -350,22 +355,16 @@ HTML_UI = """
             to { opacity: 0; transform: translateX(40px) scale(0.95); }
         }
 
-        /* Row animations */
-        .row-enter {
-            animation: rowSlideIn 0.35s ease-out;
-        }
+        .row-enter { animation: rowSlideIn 0.35s ease-out; }
         @keyframes rowSlideIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .row-exit {
-            animation: rowSlideOut 0.3s ease-in forwards;
-        }
+        .row-exit { animation: rowSlideOut 0.3s ease-in forwards; }
         @keyframes rowSlideOut {
             to { opacity: 0; transform: translateX(30px); height: 0; padding: 0; overflow: hidden; }
         }
 
-        /* Confirm modal */
         .modal-overlay {
             position: fixed; inset: 0; z-index: 9998; background: rgba(0,0,0,0.6);
             backdrop-filter: blur(4px); display: flex; align-items: center;
@@ -388,15 +387,13 @@ HTML_UI = """
         .modal-box .btn-cancel {
             background: var(--bg-input); border: 1px solid var(--border); color: var(--text-secondary);
             border-radius: 10px; padding: 9px 20px; font-size: 13px; cursor: pointer;
-            font-family: 'Space Grotesk', sans-serif; font-weight: 500;
-            transition: all 0.2s ease;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 500; transition: all 0.2s ease;
         }
         .modal-box .btn-cancel:hover { border-color: var(--text-muted); color: var(--text-primary); }
         .modal-box .btn-delete {
             background: var(--danger); border: none; color: #fff;
             border-radius: 10px; padding: 9px 20px; font-size: 13px; cursor: pointer;
-            font-family: 'Space Grotesk', sans-serif; font-weight: 600;
-            transition: all 0.2s ease;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 600; transition: all 0.2s ease;
         }
         .modal-box .btn-delete:hover { box-shadow: 0 4px 16px var(--danger-glow); transform: translateY(-1px); }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -405,7 +402,6 @@ HTML_UI = """
             to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
-        /* Loading spinner */
         .spinner {
             width: 18px; height: 18px; border: 2px solid transparent;
             border-top-color: #fff; border-radius: 50%;
@@ -413,18 +409,34 @@ HTML_UI = """
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Responsive */
+        /* Passing rate bar in stats */
+        .pass-rate-bar {
+            width: 100%; height: 4px; background: rgba(71,85,105,0.3);
+            border-radius: 2px; margin-top: 10px; overflow: hidden;
+        }
+        .pass-rate-fill {
+            height: 100%; border-radius: 2px;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            transition: width 0.6s ease;
+        }
+
         @media (max-width: 768px) {
             .stats-row { grid-template-columns: 1fr; }
             .form-section { padding: 20px 18px 18px; }
+            .form-section .form-grid {
+                grid-template-columns: 1fr 1fr !important;
+            }
+            .form-section .form-grid .btn-add {
+                grid-column: 1 / -1;
+            }
             .table-toolbar { padding: 16px 18px 12px; flex-direction: column; align-items: stretch; }
             .search-box { flex: 1; }
             .table-custom thead th,
             .table-custom tbody td { padding: 10px 14px; }
+            .avg-bar-wrap { display: none; }
             .main-wrapper { padding: 20px 10px 60px; }
         }
 
-        /* Reduced motion */
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 animation-duration: 0.01ms !important;
@@ -435,7 +447,6 @@ HTML_UI = """
 </head>
 <body>
 
-<!-- Animated background -->
 <div class="bg-layer">
     <div class="bg-orb"></div>
     <div class="bg-orb"></div>
@@ -443,23 +454,18 @@ HTML_UI = """
 </div>
 <div class="bg-grid"></div>
 
-<!-- Toast container -->
 <div class="toast-container" id="toast-container"></div>
-
-<!-- Modal container -->
 <div id="modal-container"></div>
 
 <div class="main-wrapper">
     <div style="max-width: 920px; margin: 0 auto;">
 
-        <!-- Header -->
         <header class="page-header">
             <div class="badge-label"><i class="fas fa-database"></i> PostgreSQL &middot; Render</div>
             <h1>Student <span>Database</span></h1>
-            <p>Manage student records with real-time CRUD operations backed by a persistent PostgreSQL instance.</p>
+            <p>Track student records, average grades, and section assignments with persistent PostgreSQL storage.</p>
         </header>
 
-        <!-- Stats -->
         <div class="stats-row">
             <div class="stat-card">
                 <div class="stat-icon"><i class="fas fa-users"></i></div>
@@ -467,35 +473,34 @@ HTML_UI = """
                 <div class="stat-label">Total Students</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
-                <div class="stat-number" id="stat-grades">0</div>
-                <div class="stat-label">Grade Levels</div>
+                <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="stat-number" id="stat-avg">—</div>
+                <div class="stat-label">Class Average</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-shapes"></i></div>
-                <div class="stat-number" id="stat-sections">0</div>
-                <div class="stat-label">Sections</div>
+                <div class="stat-icon"><i class="fas fa-trophy"></i></div>
+                <div class="stat-number" id="stat-highest">—</div>
+                <div class="stat-label">Highest Average</div>
+                <div class="pass-rate-bar"><div class="pass-rate-fill" id="pass-rate-fill" style="width:0%"></div></div>
             </div>
         </div>
 
-        <!-- Main Card -->
         <div class="main-card">
 
-            <!-- Form -->
             <div class="form-section">
                 <input type="hidden" id="student-id">
-                <div style="display: grid; grid-template-columns: 1fr 100px 120px auto; gap: 12px; align-items: end;">
+                <div class="form-grid" style="display: grid; grid-template-columns: 1fr 130px 120px auto; gap: 12px; align-items: end;">
                     <div>
                         <label class="form-label-custom">Full Name</label>
                         <input type="text" id="name" class="form-control-custom" placeholder="e.g. Juan Dela Cruz">
                     </div>
                     <div>
-                        <label class="form-label-custom">Grade</label>
-                        <input type="number" id="grade" class="form-control-custom" placeholder="11" min="1" max="12">
+                        <label class="form-label-custom">Average</label>
+                        <input type="number" id="grade" class="form-control-custom" placeholder="e.g. 89.5" step="0.01" min="0" max="100">
                     </div>
                     <div>
                         <label class="form-label-custom">Section</label>
-                        <input type="text" id="section" class="form-control-custom" placeholder="E.g. Aquila">
+                        <input type="text" id="section" class="form-control-custom" placeholder="e.g. Aquila">
                     </div>
                     <button class="btn-add" id="btn-submit" onclick="saveStudent()">
                         <span class="spinner" id="btn-spinner"></span>
@@ -505,7 +510,6 @@ HTML_UI = """
                 </div>
             </div>
 
-            <!-- Table -->
             <div class="table-section">
                 <div class="table-toolbar">
                     <h2>
@@ -514,17 +518,17 @@ HTML_UI = """
                     </h2>
                     <div class="search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="search-input" placeholder="Search name, grade, or section..." oninput="filterTable()">
+                        <input type="text" id="search-input" placeholder="Search name, average, or section..." oninput="filterTable()">
                     </div>
                 </div>
                 <div class="table-wrap">
                     <table class="table-custom">
                         <thead>
                             <tr>
-                                <th style="border-radius: 0;">Student</th>
-                                <th>Grade</th>
+                                <th>Student</th>
+                                <th>Average</th>
                                 <th>Section</th>
-                                <th style="text-align: right; border-radius: 0;">Actions</th>
+                                <th style="text-align: right;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="student-list"></tbody>
@@ -538,9 +542,9 @@ HTML_UI = """
 
 <script>
     const API = '/students';
+    const PASSING_GRADE = 75;
     let allStudents = [];
 
-    /* Avatar color generator based on name */
     const avatarColors = [
         '#10b981','#06b6d4','#f59e0b','#8b5cf6','#ec4899',
         '#ef4444','#14b8a6','#f97316','#6366f1','#84cc16'
@@ -554,7 +558,6 @@ HTML_UI = """
         return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
     }
 
-    /* Toast notification */
     function showToast(message, type = 'success') {
         const icons = { success: 'fa-check-circle', danger: 'fa-trash-alt', info: 'fa-info-circle' };
         const container = document.getElementById('toast-container');
@@ -568,7 +571,6 @@ HTML_UI = """
         }, 2500);
     }
 
-    /* Confirm modal */
     function showConfirm(title, msg, onConfirm) {
         const container = document.getElementById('modal-container');
         container.innerHTML = `
@@ -591,17 +593,39 @@ HTML_UI = """
         document.getElementById('modal-container').innerHTML = '';
     }
 
-    /* Update stats */
-    function updateStats() {
-        document.getElementById('stat-total').textContent = allStudents.length;
-        const grades = new Set(allStudents.map(s => s.grade).filter(Boolean));
-        const sections = new Set(allStudents.map(s => s.section).filter(Boolean));
-        document.getElementById('stat-grades').textContent = grades.size;
-        document.getElementById('stat-sections').textContent = sections.size;
-        document.getElementById('count-badge').textContent = allStudents.length;
+    /* Grade helpers */
+    function isPassing(val) { return val !== null && val !== undefined && Number(val) >= PASSING_GRADE; }
+    function formatGrade(val) {
+        if (val === null || val === undefined || val === '') return null;
+        const num = Number(val);
+        if (isNaN(num)) return null;
+        return Number(num.toFixed(2));
+    }
+    function gradeClass(val) {
+        if (val === null || val === undefined) return 'none';
+        return isPassing(val) ? 'pass' : 'fail';
     }
 
-    /* Render table */
+    function updateStats() {
+        document.getElementById('stat-total').textContent = allStudents.length;
+        document.getElementById('count-badge').textContent = allStudents.length;
+
+        const grades = allStudents.map(s => s.grade).filter(g => g !== null && g !== undefined && g !== '');
+        if (grades.length > 0) {
+            const nums = grades.map(Number);
+            const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
+            const highest = Math.max(...nums);
+            document.getElementById('stat-avg').textContent = avg.toFixed(1);
+            document.getElementById('stat-highest').textContent = highest.toFixed(1);
+            /* Pass rate bar: highest / 100 */
+            document.getElementById('pass-rate-fill').style.width = Math.min(highest, 100) + '%';
+        } else {
+            document.getElementById('stat-avg').textContent = '—';
+            document.getElementById('stat-highest').textContent = '—';
+            document.getElementById('pass-rate-fill').style.width = '0%';
+        }
+    }
+
     function renderTable(data) {
         const list = document.getElementById('student-list');
         if (!data.length) {
@@ -618,6 +642,11 @@ HTML_UI = """
         list.innerHTML = data.map(s => {
             const color = getAvatarColor(s.name);
             const initials = getInitials(s.name);
+            const g = formatGrade(s.grade);
+            const cls = gradeClass(g);
+            const barW = g !== null ? Math.min(Math.max(g, 0), 100) : 0;
+            const displayVal = g !== null ? g : '—';
+            const icon = cls === 'pass' ? 'fa-check' : cls === 'fail' ? 'fa-xmark' : 'fa-minus';
             return `
             <tr class="row-enter" id="row-${s.id}">
                 <td>
@@ -626,7 +655,12 @@ HTML_UI = """
                         ${escapeHtml(s.name)}
                     </div>
                 </td>
-                <td><span class="grade-badge"><i class="fas fa-graduation-cap" style="font-size:11px;"></i> ${escapeHtml(String(s.grade || '—'))}</span></td>
+                <td>
+                    <div class="avg-bar-wrap">
+                        <span class="avg-badge ${cls}"><i class="fas ${icon}" style="font-size:10px;"></i> ${displayVal}</span>
+                        ${g !== null ? `<div class="avg-bar-bg"><div class="avg-bar-fill ${cls}" style="width:${barW}%"></div></div>` : ''}
+                    </div>
+                </td>
                 <td><span class="section-tag">${escapeHtml(s.section || '—')}</span></td>
                 <td>
                     <div class="action-btns" style="justify-content: flex-end;">
@@ -644,7 +678,6 @@ HTML_UI = """
         return div.innerHTML;
     }
 
-    /* Filter / search */
     function filterTable() {
         const q = document.getElementById('search-input').value.toLowerCase().trim();
         if (!q) { renderTable(allStudents); return; }
@@ -656,7 +689,6 @@ HTML_UI = """
         renderTable(filtered);
     }
 
-    /* Load data */
     async function load() {
         try {
             const res = await fetch(API);
@@ -669,14 +701,20 @@ HTML_UI = """
         }
     }
 
-    /* Save (add or update) */
     async function saveStudent() {
         const id = document.getElementById('student-id').value;
         const name = document.getElementById('name').value.trim();
-        const grade = document.getElementById('grade').value;
+        const gradeVal = document.getElementById('grade').value;
         const section = document.getElementById('section').value.trim();
 
         if (!name) { showToast('Please enter a student name', 'danger'); document.getElementById('name').focus(); return; }
+
+        /* Validate grade range if provided */
+        if (gradeVal !== '' && (Number(gradeVal) < 0 || Number(gradeVal) > 100)) {
+            showToast('Average must be between 0 and 100', 'danger');
+            document.getElementById('grade').focus();
+            return;
+        }
 
         const btn = document.getElementById('btn-submit');
         const spinner = document.getElementById('btn-spinner');
@@ -685,7 +723,7 @@ HTML_UI = """
         icon.style.display = 'none';
         btn.disabled = true;
 
-        const payload = { name, grade, section };
+        const payload = { name, grade: gradeVal !== '' ? Number(gradeVal) : null, section };
         try {
             const url = id ? `${API}/${id}` : API;
             const method = id ? 'PUT' : 'POST';
@@ -706,11 +744,10 @@ HTML_UI = """
         }
     }
 
-    /* Edit */
     function editStudent(s) {
         document.getElementById('student-id').value = s.id;
         document.getElementById('name').value = s.name;
-        document.getElementById('grade').value = s.grade;
+        document.getElementById('grade').value = s.grade !== null && s.grade !== undefined ? s.grade : '';
         document.getElementById('section').value = s.section;
         const btn = document.getElementById('btn-submit');
         btn.classList.add('updating');
@@ -720,13 +757,11 @@ HTML_UI = """
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    /* Delete with confirm modal */
     function confirmDelete(id, name) {
         showConfirm(
             'Delete Student',
             `Are you sure you want to remove <strong>${name}</strong> from the database? This action cannot be undone.`,
             async () => {
-                /* Animate row out */
                 const row = document.getElementById(`row-${id}`);
                 if (row) row.classList.add('row-exit');
                 setTimeout(async () => {
@@ -742,7 +777,6 @@ HTML_UI = """
         );
     }
 
-    /* Reset form */
     function reset() {
         document.getElementById('student-id').value = '';
         document.getElementById('name').value = '';
@@ -754,7 +788,6 @@ HTML_UI = """
         document.getElementById('btn-icon').className = 'fas fa-plus';
     }
 
-    /* Enter key to submit */
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && ['name', 'grade', 'section'].includes(document.activeElement?.id)) {
             saveStudent();
